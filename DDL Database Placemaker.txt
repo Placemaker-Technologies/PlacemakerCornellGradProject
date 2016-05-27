@@ -1,0 +1,76 @@
+CREATE TABLE ImagePost
+(
+  id serial PRIMARY KEY,
+  user_id character varying(50) NOT NULL,
+  currtime timestamp without time zone,
+  description character varying(300),
+  favorite_UserID text,
+  favorite_count integer,
+  favorite_Time text,
+  comment_UserID text,
+  comment_count integer,
+  comment_text text,
+  share_UserID text,
+  share_count integer,
+  geoMapLocation geometry NOT NULL,
+  image character varying(100) NOT NULL,
+  storyname character varying(50)
+);
+
+create sequence userid_seq;
+create type feedType AS (post_id integer,user_id text,title text,storytype text,icon_url text,location_long double precision,location_lat double precision,
+image_url text[],favorite_count integer,share_count int,liked boolean,description text,location_name text,currTime text);
+
+create table users(
+user_id character varying(50) default 'User'||nextval('userid_seq') PRIMARY KEY,
+FirstName character varying(50) NOT NULL,
+LastName character varying(60) NOT NULL,
+Age integer,
+Gender character(1) NOT NULL,
+Email character varying(60) NOT NULL,
+BirthDate date,
+icon_url character varying(100), 
+Ethnicity character varying(30),
+Industry character varying(50),
+Income real,
+blocked_posts text
+);
+
+
+insert into users(FirstName,LastName,Gender,Email) values ('Sanhita','Mukherji','F','sm2475@cornell.edu');
+insert into users(FirstName,LastName,Gender,Email) values ('Brian','Rollison','M','bkr43@cornell.edu');
+insert into users(FirstName,LastName,Gender,Email) values ('Keerthana','Manoharan','F','km734@cornell.edu');
+insert into users(FirstName,LastName,Gender,Email) values ('Radhika','Banu','F','rk539@cornell.edu');
+insert into users(FirstName,LastName,Gender,Email) values ('Karan','Rajpal','M','kr377@cornell.edu');
+
+CREATE TABLE Relationship
+(
+  id serial PRIMARY KEY,
+  follower character varying(50),
+  follows character varying(50),
+  friends boolean DEFAULT false
+);
+
+
+--Follow User
+WITH upsert AS 
+(UPDATE Relationship SET friends='t'
+WHERE follower=followsID AND follows=followerID RETURNING friends) 
+INSERT INTO Relationship (follower, follows, friends) 
+SELECT followerID,followsID,COALESCE(upsert.friends,foo.friends) from upsert 
+RIGHT JOIN (select 'f'::boolean as friends) AS foo on true where not exists(select 1 from Relationship r where r.follower=followerID and r.follows=followsID);
+
+
+
+WITH upsert AS 
+(UPDATE ImagePost SET shares = ltrim(shares||':'||"+UserID+", ':'),shareCount=shareCount+1
+WHERE id=imgId RETURNING *) 
+INSERT INTO ImagePost (UserId,currTime,description,likes,likeCount,shares,shareCount,locGeometry) 
+SELECT 'User5',CURRENT_TIMESTAMP,description,'',0,'',0,locGeometry from upsert
+
+create table location (id serial primary key, lat float,long float, p point,geom geometry);
+
+insert into location values (DEFAULT, 42.443961,-76.501881, POINT(42.443961,-76.501881), ST_GeomFromText('POINT(42.443961 -76.501881)',4326)); /*ithaca*/
+insert into location values (DEFAULT, 42.436968,-76.477520, POINT(42.436968,-76.477520), ST_GeomFromText('POINT(42.436968 -76.477520)',4326)); /*cornell*/
+insert into location values (DEFAULT, 42.438949,-76.483781, POINT(42.438949,-76.483781), ST_GeomFromText('POINT(42.438949 -76.483781)',4326)); /*CTB*/
+insert into location values (DEFAULT, 40.8075, -73.9626, POINT(40.8075, -73.9626), ST_GeomFromText('POINT(40.8075 -73.9626)',4326)); /*Columbia uni*/
