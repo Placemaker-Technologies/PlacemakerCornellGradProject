@@ -1,0 +1,5 @@
+npm install node-uuid
+npm install body-parser
+npm install express
+npm install pg
+npm install moment
