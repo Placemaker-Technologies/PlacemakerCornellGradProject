@@ -3,3 +3,6 @@ npm install body-parser
 npm install express
 npm install pg
 npm install moment
+npm install multer
+npm install forever
+npm install aws-sdk
