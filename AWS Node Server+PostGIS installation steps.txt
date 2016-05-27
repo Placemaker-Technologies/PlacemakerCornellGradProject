@@ -1,0 +1,146 @@
+URL:  ec2-52-87-161-0.compute-1.amazonaws.com
+
+sudo yum update -y
+
+sudo yum install nodejs npm --enablerepo=epel
+
+Check -- node  or node -v or npm -v
+cd var
+sudo mkdir placemaker
+cd placemaker
+
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 9000
+sudo iptables -t nat -A OUTPUT -p tcp --dport 80 -o lo -j REDIRECT --to-ports 9000
+
+
+sudo npm install forever
+sudo npm install multer
+sudo npm install express
+sudo npm install body-parser
+sudo npm install pg
+sudo npm install node-uuid
+sudo npm install aws-sdk
+check node_modules
+
+Write all your files
+
+
+../node_modules/forever/bin/forever start -al forever.log -ao out.log -ae err.log \server.js
+
+
+../node_modules/forever/bin/forever stop \server.js
+
+CronJOB
+// remove content of uploads folder everyday at midnight
+0 0 * * * rm -f /var/placemaker/RESTcode/uploads/*
+
+
+POSTGRES
+
+sudo su -
+yes | mkfs -t ext3 /dev/sdb
+mkdir /pgdata
+mount /dev/sdb /pgdata
+exit
+
+df -h /pgdata Tell you the total space in sdf
+
+
+sudo vim /etc/yum.repos.d/amzn-main.repo
+[At the bottom of the "[amzn-main]" section, after "enabled=1", add "exclude=postgresql*"]
+sudo vim /etc/yum.repos.d/amzn-updates.repo
+
+
+sudo wget https://download.postgresql.org/pub/repos/yum/9.4/redhat/rhel-6-x86_64/pgdg-ami201503-94-9.4-2.noarch.rpm
+sudo rpm -ivh pgdg-ami201503-94-9.4-2.noarch.rpm
+
+sudo yum install postgresql94 postgresql94-contrib postgresql94-devel postgresql94-server
+http://imperialwicket.com/aws-install-postgresql-90-on-amazon-linux/
+
+
+sudo rm -rf /pgdata/lost+found
+sudo chown -R postgres:postgres /pgdata
+sudo su -
+su postgres -
+/usr/pgsql-9.4/bin/initdb -D /pgdata
+
+
+
+Edit:
+vim /pgdata/postgresql.conf
+vim /pgdata/pg_hba.conf  //Which Users have access to database from outside
+
+Start-Stop DB SERVER
+/usr/pgsql-9.4/bin/pg_ctl start -D /pgdata
+/usr/pgsql-9.4/bin/pg_ctl status -D /pgdata
+/usr/pgsql-9.4/bin/pg_ctl stop -D /pgdata -m fast
+
+USERS
+postgres    Pl@ceM@ker
+power_user    Pl0ceM0ker
+DATABASE Name- placemaker
+
+IMP
+/usr/pgsql-9.4/bin/createuser UserName
+/usr/pgsql-9.4/bin/psql 
+createuser power_user;
+ALTER USER power_user WITH SUPERUSER;
+ALTER USER power_user WITH PASSWORD 'Pl0ceM0ker';
+
+psql -U postgres
+
+postgres=# ALTER USER postgres WITH PASSWORD 'password';
+postgres=# \q
+
+and change "trust" back to "md5" in pg_hba.conf.
+
+
+POSTGIS:
+sudo yum install gcc make gcc-c++ libtool libxml2-devel libpng libtiff
+
+cd /home/ec2-user/
+mkdir postgis
+cd postgis
+
+# Download GEOS and install
+wget http://download.osgeo.org/geos/geos-3.4.2.tar.bz2
+tar xjf geos-3.4.2.tar.bz2 
+cd geos-3.4.2
+./configure 
+make
+sudo make install 
+ 
+# Download Proj.4 and install
+cd ..
+wget http://download.osgeo.org/proj/proj-4.8.0.tar.gz
+tar xzf proj-4.8.0.tar.gz
+cd proj-4.8.0
+./configure
+make
+sudo make install
+ 
+# Download and install GDAL
+cd ..
+wget http://download.osgeo.org/gdal/1.10.1/gdal-1.10.1.tar.gz
+tar -xvzf gdal-1.10.1.tar.gz
+cd gdal-1.10.1
+./configure
+make
+sudo make install
+
+# Download and install PostGIS 
+export LD_LIBRARY_PATH=/usr/pgsql-9.4/lib/:LD_LIBRARY_PATH
+cd ..
+wget http://download.osgeo.org/postgis/source/postgis-2.1.2.tar.gz
+tar -xvzf postgis-2.1.2.tar.gz
+cd postgis-2.1.2
+./configure --with-pgconfig=/usr/pgsql-9.4/bin/pg_config --with-geosconfig=/usr/local/bin/geos-config --with-gdalconfig=/usr/local/bin/gdal-config
+make
+sudo make install
+
+
+# update your libraries
+sudo su
+echo /usr/local/lib >> /etc/ld.so.conf
+exit
+sudo ldconfig
